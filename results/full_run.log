@@ -1,0 +1,12 @@
+experiments: coins=['btc', 'eth', 'ada', 'link', 'ltc'] models=['xgb', 'lgbm', 'mlp'] n_jobs=2
+[btc] 11 folds in 90.8s
+[eth] 11 folds in 91.3s
+[ada] 11 folds in 90.6s
+[link] 11 folds in 91.2s
+[ltc] 11 folds in 87.9s
+experiments done in 272.6s
+analysis done in 37.6s; total 310.3s
+regime tests: 4/56 significant at BH q<0.05
+real 313.36
+user 494.50
+sys 3.20
