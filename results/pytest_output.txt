@@ -1,0 +1,41 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.15, pytest-9.1.1, pluggy-1.7.0 -- <repo>/.venv/bin/python
+rootdir: <repo>
+configfile: pytest.ini
+testpaths: tests
+plugins: platformdirs-4.13.5
+collecting ... collected 25 items
+
+test_explainers.py::test_treeshap_deterministic_and_additive[xgb] PASSED [  4%]
+test_explainers.py::test_treeshap_deterministic_and_additive[lgbm] PASSED [  8%]
+test_explainers.py::test_stochastic_explainers_reproducible_with_same_seed PASSED [ 12%]
+test_features.py::test_no_lookahead_truncation[400] PASSED         [ 16%]
+test_features.py::test_no_lookahead_truncation[900] PASSED         [ 20%]
+test_features.py::test_no_lookahead_truncation[1500] PASSED        [ 24%]
+test_features.py::test_no_lookahead_truncation[2500] PASSED        [ 28%]
+test_features.py::test_no_lookahead_truncation[3000] PASSED        [ 32%]
+test_features.py::test_future_shock_does_not_leak PASSED           [ 36%]
+test_features.py::test_target_is_next_day_direction PASSED         [ 40%]
+test_features.py::test_macd_trio_is_collinear PASSED               [ 44%]
+test_metrics.py::test_top_k_uses_absolute_values_and_stable_ties PASSED [ 48%]
+test_metrics.py::test_jaccard PASSED                               [ 52%]
+test_metrics.py::test_rank_corr PASSED                             [ 56%]
+test_metrics.py::test_pair_and_set_stability PASSED                [ 60%]
+test_metrics.py::test_benjamini_hochberg_matches_reference PASSED  [ 64%]
+test_metrics.py::test_cluster_bootstrap_ci_contains_mean PASSED    [ 68%]
+test_metrics.py::test_regime_test_detects_real_gap_and_not_a_null PASSED [ 72%]
+test_pipeline.py::test_sample_points_balanced_and_deterministic PASSED [ 76%]
+test_pipeline.py::test_block_bootstrap_shape PASSED                [ 80%]
+test_pipeline.py::test_perturb_keeps_feature_identities PASSED     [ 84%]
+test_pipeline.py::test_two_quick_runs_identical PASSED             [ 88%]
+test_validation.py::test_folds_time_ordered_and_disjoint PASSED    [ 92%]
+test_validation.py::test_regime_threshold_uses_training_data_only PASSED [ 96%]
+test_validation.py::test_fold_context_threshold_ignores_future PASSED [100%]
+
+============================= slowest 5 durations ==============================
+27.06s call     tests/test_pipeline.py::test_two_quick_runs_identical
+0.25s call     tests/test_metrics.py::test_regime_test_detects_real_gap_and_not_a_null
+0.08s call     tests/test_explainers.py::test_stochastic_explainers_reproducible_with_same_seed
+0.07s call     tests/test_explainers.py::test_treeshap_deterministic_and_additive[lgbm]
+0.06s call     tests/test_explainers.py::test_treeshap_deterministic_and_additive[xgb]
+============================= 25 passed in 30.69s ==============================
