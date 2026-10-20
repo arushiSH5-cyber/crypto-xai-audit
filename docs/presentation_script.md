@@ -1,143 +1,143 @@
-# Presentation script: code and results walkthrough (about 10 minutes)
+# Presentation script: recorded code review (about 10 minutes)
 
-Setup before recording: open the repo in your editor, a terminal at the repo root with the venv
-active, and `report/report.pdf` (or the PNGs in `results/figures/`) in a viewer. Times are
-cumulative targets. **[SHOW]** lines say what is on screen. Everything else is spoken.
+**Before recording.** Open the repo in your editor. Open a terminal at the repo root with the venv
+active (`source .venv/bin/activate`). Open `results/figures/` in an image viewer and
+`report/report.pdf` in a PDF viewer. Do a dry run of `python run_all.py --quick` once, so caches
+are warm. Times are cumulative targets.
+
+## On-screen checklist
+
+| Time | Segment | Show on screen |
+|---|---|---|
+| 0:00 | 1. Motivation | `README.md` (top) |
+| 0:45 | 2. Data and features | `data/raw/btc.csv` (first lines), `src/xaiaudit/data.py`, `src/xaiaudit/features.py` |
+| 1:45 | 3. No-leakage design | `src/xaiaudit/validation.py`, `tests/test_features.py`, `tests/test_validation.py` |
+| 2:45 | 4. Models | `src/xaiaudit/models.py`, `results/figures/fig1_accuracy_by_regime.png` |
+| 3:30 | 5. Explainers | `src/xaiaudit/explainers.py`, `src/xaiaudit/metrics.py` |
+| 4:15 | 6. The four audits | `src/xaiaudit/experiments.py` (`audit_model`), `fig2`, `fig3`, `fig4` |
+| 6:30 | 7. Key regime result | `src/xaiaudit/analysis.py` (docstring), `fig5_volatile_minus_calm_forest.png`, `fig7_placebo_null.png` |
+| 8:00 | 8. Limitations | `report/report.pdf`, Section 8 |
+| 8:45 | 9. Live demo: quick run | terminal: `python run_all.py --quick`, then `results/quick/tables/regime_tests.md` |
+| 9:45 | Close | `README.md` (Reproduce section) |
 
 ---
 
-## 0:00 – 1:00 · The question
+## 1. Motivation (0:00 – 0:45) · show `README.md`
 
-**[SHOW]** README.md, top section.
+"Crypto forecasting papers often end with a SHAP plot that says something like 'RSI and lagged
+returns drive the price'. My question is: can we trust that plot? I train standard next-day
+direction models for five coins and audit their explanations four ways. Do the methods agree?
+Do the drivers survive retraining? Do they survive a tiny input nudge? And the key question: is
+it worse in volatile markets? Two baselines run through everything. One is the explainer's own
+noise floor. The other is a model trained on shuffled labels, which by construction has learned
+nothing."
 
-"Crypto forecasting papers often end with a SHAP plot that says something like 'RSI and
-lagged returns drive the price'. My project asks whether we can trust that plot. I train
-standard next-day direction models for five coins: Bitcoin, Ethereum, Cardano, Chainlink and
-Litecoin. Then I audit their explanations four ways. One, do the explanation methods agree?
-Two, do the drivers stay the same when I retrain the model? Three, do they stay the same
-when I nudge the inputs slightly? And four, the key question: is all of this worse in
-volatile markets than in calm ones?"
+## 2. Data and features (0:45 – 1:45) · show `data/raw/btc.csv`, `data.py`, `features.py`
 
-"Two controls run through everything. One is the explainer's own noise floor: the same
-model and input, explained again with a new random seed. The other is a model trained on
-shuffled labels, which by construction has learned nothing."
+"The data are Coin Metrics Community daily CSVs for BTC, ETH, ADA, LINK and LTC. I use only the
+price and volume columns, so it's close-only, with no open/high/low. LTC replaces SOL because
+SOL's volume history is missing. The loader refuses gaps instead of forward-filling them."
 
-## 1:00 – 2:30 · Data, features, no look-ahead
+"Twelve features: three lagged returns, 5- and 10-day returns, RSI, the MACD trio, 7- and 30-day
+volatility, and a volume ratio. The MACD histogram is exactly MACD minus its signal. I kept that
+on purpose, because correlated features are part of the story. The target is whether
+*tomorrow's* return is positive."
 
-**[SHOW]** `src/xaiaudit/data.py`, then `features.py`.
+## 3. No-leakage design (1:45 – 2:45) · show `validation.py`, then the two test files
 
-"The data are Coin Metrics Community daily CSVs, price and volume only, so there's no
-open/high/low. The loader refuses gaps rather than silently forward-filling them."
+"Validation is an expanding walk-forward: six-month test blocks starting in 2021, training on
+everything before them with a one-day embargo, never shuffled. That's 11 folds per coin, 55 in
+total."
 
-"There are twelve features, all computed from information available at the end of day *t*:
-lagged returns, RSI, the MACD trio, two realised volatilities and a volume ratio. The target
-is whether *tomorrow's* return is positive. `next_ret` is the only forward-looking column."
+"A day is 'volatile' if its 30-day volatility is above the median of the *training* window, so
+the label is known on the day you predict."
 
-**[SHOW]** `tests/test_features.py::test_no_lookahead_truncation`.
+"Tests back this up. `test_no_lookahead_truncation` cuts the series at five points and checks
+that every past feature is identical. `test_future_shock_does_not_leak` triples future prices and
+checks nothing earlier moves. The validation tests check that folds are ordered and disjoint, and
+that corrupting future data can't move the regime threshold."
 
-"This test proves causality. I build features on the full series and on the series cut at
-five different points. Every past row has to come out identical. A second test triples all
-prices from day *t* onward and checks that no earlier feature changes."
+## 4. Models (2:45 – 3:30) · show `models.py`, then `fig1_accuracy_by_regime.png`
 
-## 2:30 – 3:30 · Walk-forward validation and regimes
+"Three models: XGBoost, LightGBM and a small scikit-learn MLP, plus the control: the same
+XGBoost trained on shuffled labels. Here is the honest context. Accuracy is 0.512 for XGBoost and
+LightGBM and 0.507 for the MLP. The control gets 0.502, and always predicting 'up' gets 0.504. In
+calm markets every model is a coin flip. The only edge is in volatile markets, where XGBoost gets
+0.538. So most of what we explain is noise, and I report accuracy next to every stability number."
 
-**[SHOW]** `src/xaiaudit/validation.py`.
+## 5. Explainers (3:30 – 4:15) · show `explainers.py`, `metrics.py`
 
-"Validation is an expanding walk-forward. Each fold tests on six months, starting in January
-2021. It trains on everything before that, minus a one-day embargo. That gives 11 folds per
-coin, 55 in total, with no shuffling anywhere."
+"TreeSHAP is exact and deterministic. KernelSHAP and LIME are sampling-based, so they're random.
+Permutation importance is global. They output different units, so I compare *rankings*: the
+main metric is top-3 Jaccard, the overlap of the three most important features. I also use
+Spearman, top-1 agreement, and how often the top-1 feature changes. For scale: two random
+rankings would get a top-3 Jaccard of 0.164."
 
-"A day is 'volatile' if its 30-day volatility is above the median of the *training* window.
-So the regime is known on the day you predict. Tests check that the folds are ordered and
-disjoint, and that corrupting future data can't move the threshold."
+## 6. The four audits (4:15 – 6:30) · show `experiments.py` → `audit_model`, then figures 2, 3, 4
 
-## 3:30 – 5:00 · The four audits in code
+"For each coin, fold and model I pick 10 test days, half calm and half volatile when possible.
+That's 550 points, and all four audits use the same points."
 
-**[SHOW]** `src/xaiaudit/experiments.py`: scroll through `audit_model`.
+*Show `fig2_method_agreement_heatmap.png`.*
+"**Agreement.** The two SHAP methods share about two-thirds of their top three (0.686 for
+XGBoost). LIME shares about a third (0.324). But LIME doesn't even agree with *itself*: run it
+twice on the same point and the overlap is 0.638."
 
-"For every coin, fold and model (XGBoost, LightGBM, an MLP, and the shuffled-label control)
-I fit at seed 0 and save every prediction. Then I pick 10 test days per fold, half calm and
-half volatile."
+*Show the noise-floor block in `audit_model`.*
+"**Noise floor.** KernelSHAP and LIME are re-run with new seeds on the exact same input. TreeSHAP
+is re-run and *asserted* identical. The run would crash if it weren't."
 
-"Block 1 is agreement: TreeSHAP, KernelSHAP and LIME on the same points, plus permutation
-importance globally."
+*Show `fig3_retrain_stability_by_regime.png`.*
+"**Retraining.** TreeSHAP has zero noise, yet changing only the XGBoost seed leaves a top-3
+overlap of 0.624. Block-bootstrapping the training data drops it to 0.312. The shuffled-label
+model is just as stable, at 0.593. So stability tells you nothing about whether the model learned
+anything."
 
-"Block 2 is the noise floor. KernelSHAP and LIME are re-run with new seeds. TreeSHAP is re-run
-and *asserted* bit-identical, and the run would crash if it weren't."
+*Show `fig4_perturbation_vs_noise_floor.png`.*
+"**Perturbation.** Adding noise of 5% of a standard deviation changes the TreeSHAP top feature
+for 0.280 of points, while the prediction flips for only 0.136. For LIME, the dashed noise floor
+shows that most of the change is LIME's own randomness."
 
-"Block 3 is retraining: five new seeds and five block bootstraps of the training data,
-re-explained each time."
+## 7. Key regime result (6:30 – 8:00) · show `analysis.py` docstring, then `fig5`, then `fig7`
 
-"Block 4 is perturbation: Gaussian noise at 1% and 5% of each feature's standard deviation.
-One detail: perturbation rep *r* reuses the explainer seed of noise-floor rep *r*, so any
-difference between them comes from the input change alone."
+"Statistics: points in one fold share a model, so I use a cluster bootstrap over the 55
+coin-folds. p-values come from shuffling regime labels *inside* each fold, and Benjamini–Hochberg
+corrects across 56 tests. The placebo gives each fold the regime labels of a different half-year,
+which shows how big a fake regime effect can look."
 
-**[SHOW]** terminal: `python run_all.py --quick` (about 20 s).
+*Show `fig5_volatile_minus_calm_forest.png`.*
+"Positive means less stable when volatile. Of 52 explanation tests, none is significantly
+positive. Only 9 are positive at all. The pooled headline differences are all slightly negative,
+for example −0.007 for seed retraining with a CI from −0.022 to 0.009. The two significant
+explanation results, both MLP, go the *other* way. The red rows at the top are accuracy: the
+models really are better in volatile markets."
 
-"Coins run in parallel. Seeds come from a CRC of (seed, coin, fold, task), so two runs give
-bit-identical CSVs, and there's a test for that. The full run takes about five minutes."
+*Show `fig7_placebo_null.png`.*
+"And every headline difference sits inside its placebo range. My answer to the key question is a
+clear null: volatility does not make these explanations less stable."
 
-## 5:00 – 5:45 · Statistics
+## 8. Limitations (8:00 – 8:45) · show `report.pdf`, Section 8
 
-**[SHOW]** `src/xaiaudit/analysis.py`, top docstring.
+"Limitations: next-day direction is nearly random, so we're explaining near-noise models.
+Close-only data from one source. LTC instead of SOL. Only 550 explained points, so effects
+smaller than a CI half-width of 0.016 to 0.072 can't be ruled out. And correlated features like
+the MACD trio let SHAP split credit arbitrarily."
 
-"Points in the same fold share a model and a time period, so I treat each coin-fold as a
-cluster. Confidence intervals are cluster bootstraps. Regime p-values permute the labels
-*within* each fold. Benjamini–Hochberg controls false discoveries over all 56 tests. And there
-is a placebo: each fold borrows the regime labels of a *different* half-year. That shows how
-big a 'regime effect' appears by pure chance."
+## 9. Live demo (8:45 – 9:45) · terminal
 
-## 5:45 – 6:30 · Result 1: the models barely work
+```bash
+python run_all.py --quick
+```
 
-**[SHOW]** `fig1_accuracy_by_regime.png`.
+"This is the smoke test: two coins from 2024, smaller settings. Both coins run in parallel. It
+takes about 16 seconds (16.2 seconds in my clean-checkout check) and writes `results/quick/`."
 
-"First, context. Pooled accuracy is 0.512 for XGBoost and LightGBM and 0.507 for the MLP. The
-shuffled control gets 0.502. In calm markets every model is a coin flip. The only edge is in
-volatile markets, where XGBoost gets 0.538. So most of what we explain is noise. I report that
-next to every stability number."
+*Open `results/quick/tables/regime_tests.md`.* "Same tables, same tests, on the small run. The
+full run is the same command without `--quick` and takes about five minutes (310.3 seconds).
+Everything is seeded, and a fresh clone reproduced every committed result file byte-for-byte."
 
-## 6:30 – 7:30 · Result 2: methods disagree; LIME disagrees with itself
-
-**[SHOW]** `fig2_method_agreement_heatmap.png`.
-
-"The two SHAP variants share about two-thirds of their top three features. LIME shares about
-a third with either one, where random rankings would give 0.16. But LIME doesn't even agree
-with *itself*: run it twice on the same point and the top-3 overlap is only about 0.64.
-Permutation importance agrees with SHAP even less, because with no skill, no feature matters
-for accuracy."
-
-## 7:30 – 8:30 · Result 3: retraining and perturbation
-
-**[SHOW]** `fig3_retrain_stability_by_regime.png`, then `fig4_perturbation_vs_noise_floor.png`.
-
-"TreeSHAP has zero noise, yet changing only the XGBoost seed leaves a top-3 overlap of 0.62.
-Bootstrapping the training years drops it to 0.31. That is real model sensitivity. And the
-shuffled-label model is just as stable, so stability tells you nothing about whether a model
-learned anything."
-
-"A 5% nudge to the inputs changes the TreeSHAP top driver for 28% of points. That's about twice
-as often as the prediction itself flips. For LIME, most changes sit inside its own noise floor,
-the dashed line."
-
-## 8:30 – 9:30 · Result 4: the key question
-
-**[SHOW]** `fig5_volatile_minus_calm_forest.png`, then `fig7_placebo_null.png`.
-
-"Is instability worse in volatile regimes? Positive means less stable when volatile. Of 52
-explanation tests, none is significantly positive after correction. The four pooled headline
-differences are all slightly *negative* and sit within the placebo range. The two significant
-explanation results, both for the MLP, go the *other* way. The only robust regime effect is
-accuracy. So my answer to the key question is a clear null: no evidence that volatility makes
-explanations less stable."
-
-## 9:30 – 10:00 · Limitations and takeaway
-
-**[SHOW]** report, Limitations section.
-
-"Limitations: close-only data from one source, LTC instead of SOL, 550 explained points, and
-correlated features like the MACD trio that let SHAP split credit arbitrarily."
+## Close (9:45 – 10:00) · show README "Reproduce" section
 
 "Takeaway: for next-day crypto models, per-prediction SHAP or LIME stories shouldn't be read as
 facts about the market, in any regime. If you publish one, also report seed stability, the
-explainer's noise floor, and a no-skill control. Everything reproduces with one command:
-`python run_all.py`. Thanks."
+explainer's noise floor and a no-skill control. Thanks."
