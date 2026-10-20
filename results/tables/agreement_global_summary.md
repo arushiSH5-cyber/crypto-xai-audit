@@ -1,0 +1,23 @@
+| model | pair | n_folds | jaccard | spearman | top1_same |
+|---|---|---|---|---|---|
+| xgb | kernel~tree | 55 | 0.524 | 0.728 | 0.727 |
+| xgb | lime~kernel | 55 | 0.395 | 0.562 | 0.691 |
+| xgb | lime~tree | 55 | 0.433 | 0.575 | 0.727 |
+| xgb | perm~kernel | 55 | 0.264 | 0.223 | 0.218 |
+| xgb | perm~lime | 55 | 0.229 | 0.187 | 0.200 |
+| xgb | perm~tree | 55 | 0.267 | 0.286 | 0.273 |
+| lgbm | kernel~tree | 55 | 0.516 | 0.700 | 0.691 |
+| lgbm | lime~kernel | 55 | 0.455 | 0.534 | 0.655 |
+| lgbm | lime~tree | 55 | 0.455 | 0.572 | 0.709 |
+| lgbm | perm~kernel | 55 | 0.267 | 0.200 | 0.182 |
+| lgbm | perm~lime | 55 | 0.209 | 0.196 | 0.200 |
+| lgbm | perm~tree | 55 | 0.278 | 0.279 | 0.255 |
+| mlp | lime~kernel | 55 | 0.549 | 0.709 | 0.545 |
+| mlp | perm~kernel | 55 | 0.224 | 0.101 | 0.236 |
+| mlp | perm~lime | 55 | 0.235 | 0.149 | 0.200 |
+| xgb_shuffled | kernel~tree | 55 | 0.502 | 0.725 | 0.382 |
+| xgb_shuffled | lime~kernel | 55 | 0.402 | 0.522 | 0.418 |
+| xgb_shuffled | lime~tree | 55 | 0.362 | 0.548 | 0.382 |
+| xgb_shuffled | perm~kernel | 55 | 0.245 | 0.142 | 0.164 |
+| xgb_shuffled | perm~lime | 55 | 0.231 | 0.105 | 0.145 |
+| xgb_shuffled | perm~tree | 55 | 0.264 | 0.224 | 0.218 |

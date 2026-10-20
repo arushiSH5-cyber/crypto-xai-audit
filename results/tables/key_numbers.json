@@ -1,0 +1,49 @@
+{
+  "n_tests": 56,
+  "n_significant_q05": 4,
+  "n_raw_p_below_05": 12,
+  "significant_tests": [
+    {
+      "family": "accuracy",
+      "model": "xgb",
+      "detail": "all test days",
+      "metric": "correct",
+      "diff": 0.03588170018577852,
+      "p_perm": 0.0004997501249375312,
+      "q_bh": 0.02798600699650175
+    },
+    {
+      "family": "accuracy",
+      "model": "lgbm",
+      "detail": "all test days",
+      "metric": "correct",
+      "diff": 0.03541737840230419,
+      "p_perm": 0.0009995002498750624,
+      "q_bh": 0.02798600699650175
+    },
+    {
+      "family": "retrain",
+      "model": "mlp",
+      "detail": "seed",
+      "metric": "1-jaccard",
+      "diff": -0.02561200716947576,
+      "p_perm": 0.001999000499750125,
+      "q_bh": 0.02798600699650175
+    },
+    {
+      "family": "perturbation",
+      "model": "mlp",
+      "detail": "lime eps=0.05",
+      "metric": "top1_changed",
+      "diff": -0.10913978494533594,
+      "p_perm": 0.001999000499750125,
+      "q_bh": 0.02798600699650175
+    }
+  ],
+  "random_baseline_top3_jaccard": 0.1640909090909091,
+  "random_baseline_top1_same": 0.08333333333333333,
+  "n_points_explained": 550,
+  "n_folds_total": 55,
+  "n_test_days_per_model": 9835,
+  "share_volatile_test_days": 0.29334011184544995
+}

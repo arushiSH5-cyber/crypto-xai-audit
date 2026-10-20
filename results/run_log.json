@@ -1,0 +1,65 @@
+{
+  "quick": false,
+  "timings": {
+    "experiments_s": 272.6,
+    "analysis_s": 37.6,
+    "total_s": 310.3
+  },
+  "versions": {
+    "python": "3.12.15",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "scikit-learn": "1.9.1",
+    "xgboost": "3.4.1",
+    "lightgbm": "4.7.0",
+    "shap": "0.54.1",
+    "lime": "0.2.0.1"
+  },
+  "config": {
+    "coins": [
+      "btc",
+      "eth",
+      "ada",
+      "link",
+      "ltc"
+    ],
+    "start_date": "2017-12-01",
+    "end_date": "2026-05-22",
+    "test_start": "2021-01-01",
+    "refit_every_days": 182,
+    "min_train_days": 730,
+    "embargo_days": 1,
+    "regime_feature": "vol_30",
+    "models": [
+      "xgb",
+      "lgbm",
+      "mlp"
+    ],
+    "base_seed": 0,
+    "points_per_fold": 10,
+    "top_k": 3,
+    "kernel_background": 20,
+    "kernel_nsamples": 200,
+    "lime_num_samples": 1000,
+    "perm_repeats": 10,
+    "retrain_seeds": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "bootstrap_reps": 5,
+    "bootstrap_block": 30,
+    "perturb_eps": [
+      0.01,
+      0.05
+    ],
+    "perturb_reps_tree": 10,
+    "perturb_reps_slow": 3,
+    "noise_floor_reps": 3,
+    "placebo_reps": 2000,
+    "ci_boot_reps": 2000,
+    "n_jobs": 2
+  }
+}
