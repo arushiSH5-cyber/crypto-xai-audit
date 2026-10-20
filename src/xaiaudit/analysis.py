@@ -36,6 +36,7 @@ REGIMES = ["calm", "volatile"]
 COLORS = {"calm": "#2a78d6", "volatile": "#eb6834", "floor": "#8a8984", "ink": "#2b2b29",
           "grid": "#e4e3df", "sig": "#e34948"}
 MODEL_ORDER = ["xgb", "lgbm", "mlp", CONTROL]
+SHORT = {"tree": "TS", "kernel": "KS", "lime": "LIME"}
 METHOD_LABEL = {"tree": "TreeSHAP", "kernel": "KernelSHAP", "lime": "LIME", "perm": "Permutation"}
 
 
@@ -359,15 +360,14 @@ def fig_accuracy(acc: pd.DataFrame, path: Path):
 
 def fig_agreement_heatmap(agree: pd.DataFrame, path: Path):
     methods = ["tree", "kernel", "lime"]
-    fig, axes = plt.subplots(1, 4, figsize=(11, 3.0))
+    fig, axes = plt.subplots(1, 4, figsize=(12, 3.2), gridspec_kw={"wspace": 0.12})
     from matplotlib.colors import LinearSegmentedColormap
     cmap = LinearSegmentedColormap.from_list("blue", ["#f4f8fd", "#86b6ef", "#2a78d6", "#104281"])
     for ax, m in zip(axes, MODEL_ORDER):
         M = np.full((3, 3), np.nan)
-        for i in range(3):
-            M[i, i] = 1.0
         for pair, val in agree[agree["model"] == m].groupby("pair")["jaccard"].mean().items():
             a, b = pair.split("~")
+            M[methods.index(a), methods.index(a)] = M[methods.index(b), methods.index(b)] = 1.0
             M[methods.index(a), methods.index(b)] = M[methods.index(b), methods.index(a)] = val
         ax.imshow(M, vmin=0, vmax=1, cmap=cmap)
         for i in range(3):
@@ -376,7 +376,7 @@ def fig_agreement_heatmap(agree: pd.DataFrame, path: Path):
                     ax.text(j, i, f"{M[i, j]:.2f}", ha="center", va="center", fontsize=8,
                             color="white" if M[i, j] > 0.6 else COLORS["ink"])
         ax.set_xticks(range(3), [METHOD_LABEL[x] for x in methods], fontsize=7, rotation=30)
-        ax.set_yticks(range(3), [METHOD_LABEL[x] for x in methods], fontsize=7)
+        ax.set_yticks(range(3), [METHOD_LABEL[x] for x in methods] if ax is axes[0] else [], fontsize=7)
         ax.set_title(m, fontsize=9.5, loc="left")
     fig.suptitle("Cross-method agreement: mean top-3 Jaccard per explained point (1 = same top-3)",
                  fontsize=9.5, x=0.01, ha="left")
@@ -411,21 +411,22 @@ def fig_perturbation(ps: pd.DataFrame, nf: pd.DataFrame, path: Path):
             for eps in sorted(s["eps"].unique()):
                 c = s[(s["method"] == meth) & (s["eps"] == eps) & (s["regime"] == "calm")].iloc[0]
                 v = s[(s["method"] == meth) & (s["eps"] == eps) & (s["regime"] == "volatile")].iloc[0]
-                labels.append(f"{METHOD_LABEL[meth]}\nε={eps:g}")
+                labels.append(f"{SHORT[meth]}\n{eps:g}")
                 calm.append(c["top1_changed"]); vol.append(v["top1_changed"])
                 ce.append([c["top1_changed"] - c["top1_changed_lo"], c["top1_changed_hi"] - c["top1_changed"]])
                 ve.append([v["top1_changed"] - v["top1_changed_lo"], v["top1_changed_hi"] - v["top1_changed"]])
                 f = nf[(nf["model"] == m) & (nf["method"] == meth) & (nf["regime"] == "all")]
                 floor.append(f["ref_top1_changed"].iloc[0] if len(f) else np.nan)
         _regime_bars(ax, labels, np.array(calm), np.array(vol), np.array(ce).T, np.array(ve).T, floor)
-        ax.tick_params(axis="x", labelsize=6.5)
-        ax.set_ylim(0, 1)
+        ax.tick_params(axis="x", labelsize=7)
+        ax.set_ylim(0, 0.6)
         _style(ax, m)
     axes[0].set_ylabel("P(top-1 feature changes)", fontsize=8)
     fig.legend(*axes[0].get_legend_handles_labels(), frameon=False, fontsize=8, ncol=3,
                loc="lower center", bbox_to_anchor=(0.5, -0.1))
-    fig.suptitle("Perturbation: how often the top-1 driver changes vs. the explainer's own noise floor (dashed)",
-                 fontsize=9.5, x=0.01, ha="left", y=1.02)
+    fig.suptitle("Perturbation: how often the top-1 driver changes vs. the explainer's own noise floor (dashed).\n"
+                 "x-axis: method (TS = TreeSHAP, KS = KernelSHAP) and ε (noise as a fraction of the training std)",
+                 fontsize=9.5, x=0.01, ha="left", y=1.1)
     _save(fig, path)
 
 
@@ -433,7 +434,7 @@ def fig_forest(tests: pd.DataFrame, path: Path):
     t = tests[tests["diff"].notna()].reset_index(drop=True)
     parts = [t[t["family"] == "accuracy"], t[t["family"] != "accuracy"]]
     heights = [len(p) for p in parts]
-    fig, axes = plt.subplots(2, 1, figsize=(8, 0.2 * sum(heights) + 2.2),
+    fig, axes = plt.subplots(2, 1, figsize=(8, 0.15 * sum(heights) + 1.6),
                              gridspec_kw={"height_ratios": heights})
     titles = ["Accuracy: volatile − calm (positive = more accurate when volatile)",
               "Explanation instability: volatile − calm (positive = LESS stable when volatile)\n"
@@ -447,6 +448,7 @@ def fig_forest(tests: pd.DataFrame, path: Path):
             if not np.isnan(getattr(r, "placebo_lo", np.nan)):
                 ax.plot([r.placebo_lo, r.placebo_hi], [yi, yi], "|", color=COLORS["calm"], ms=6, mew=1.2)
         ax.axvline(0, color=COLORS["ink"], lw=0.8)
+        ax.set_ylim(-0.7, len(part) - 0.3)
         ax.set_yticks(y, [f"{r.family}: {r.model} · {r.detail}" for r in part.itertuples()], fontsize=6.5)
         ax.spines[["top", "right"]].set_visible(False)
         ax.tick_params(axis="x", labelsize=7.5)
@@ -473,7 +475,8 @@ def fig_top1_frequency(top1: pd.DataFrame, path: Path):
         ax.spines[["top", "right"]].set_visible(False)
         ax.tick_params(axis="x", labelsize=7)
         ax.set_title(m, fontsize=9.5, loc="left")
-    axes[0].legend(frameon=False, fontsize=7.5, loc="lower right")
+    fig.legend(*axes[0].get_legend_handles_labels(), frameon=False, fontsize=8, ncol=2,
+               loc="lower center", bbox_to_anchor=(0.5, -0.08))
     fig.suptitle("Share of explanations (base model + retrain seeds) whose top-1 driver is each feature",
                  fontsize=9.5, x=0.01, ha="left")
     _save(fig, path)
@@ -492,7 +495,7 @@ def fig_placebo(nulls: dict, keys: list[str], path: Path):
         ax.tick_params(axis="x", labelsize=7)
     axes[0].legend(frameon=False, fontsize=7.5)
     fig.suptitle("Placebo: regime labels borrowed from a different fold; null distribution of volatile − calm",
-                 fontsize=9.5, x=0.01, ha="left", y=1.04)
+                 fontsize=9.5, x=0.01, ha="left", y=1.12)
     _save(fig, path)
 
 
