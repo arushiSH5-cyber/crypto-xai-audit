@@ -1,7 +1,8 @@
 # Problem statement
 
 **Project:** Can you trust the explanation? Auditing the stability and agreement of
-feature-importance methods for cryptocurrency prediction models (CS 180, SJSU, Fall 2026).
+feature-importance methods for cryptocurrency prediction models.
+**Author:** Arushi Nirmal, San José State University (CS 180, Fall 2026).
 
 ## The problem
 
