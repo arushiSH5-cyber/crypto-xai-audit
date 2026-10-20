@@ -1,0 +1,22 @@
+# Fresh-clone reproduction check (git clone -> venv -> pytest -> quick -> full run -> git status results/)
+== venv+install
+install_s=0
+== pytest
+.........................                                                [100%]
+25 passed in 57.03s
+pytest_s=58
+== quick
+[btc] 5 folds in 10.3s
+experiments done in 13.7s
+analysis done in 2.5s; total 16.2s
+regime tests: 0/45 significant at BH q<0.05
+quick_s=19
+== full
+experiments done in 262.0s
+analysis done in 35.9s; total 297.9s
+regime tests: 4/56 significant at BH q<0.05
+full_s=301
+== compare to committed results
+ M results/run_log.json
+ results/run_log.json | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
