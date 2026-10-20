@@ -1,6 +1,29 @@
 # Can you trust the explanation? A crypto XAI audit
 
-**Arushi Nirmal, San José State University. CS 180 research project, Fall 2026.**
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![tests: passing](https://img.shields.io/badge/tests-25%20passing-brightgreen.svg)](docs/test_cases.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE)
+
+**An audit of whether SHAP and LIME explanations of crypto next-day direction models agree, stay
+stable, and get worse in volatile markets.** Arushi Nirmal, San José State University (CS 180,
+Fall 2026). Paper: [`report/report.pdf`](report/report.pdf).
+
+<p align="center">
+  <img src="results/figures/fig5_volatile_minus_calm_forest.png" width="620"
+       alt="Forest plot of volatile minus calm differences for all 56 tests">
+  <br><em>Volatile − calm difference for all 56 tests (95% CIs; blue ticks = placebo range; red = significant
+  after Benjamini–Hochberg). Lower panel: positive = less stable in volatile markets.</em>
+</p>
+
+**Findings at a glance**
+
+* **The models barely beat a coin flip:** accuracy 0.512 (XGBoost), 0.512 (LightGBM) and 0.507
+  (MLP), vs 0.502 for a shuffled-label control. There is a small edge only in volatile regimes.
+* **Explanations are fragile:** LIME agrees with itself at only 0.638 (top-3 Jaccard). TreeSHAP,
+  which has zero explainer noise, keeps a top-3 Jaccard of just 0.624 across retraining seeds.
+  The no-skill control is just as stable.
+* **Volatility does not make it worse:** none of 52 explanation-instability tests is
+  significantly higher in volatile regimes. The only robust regime effect is in accuracy.
 
 ## What this project is
 
@@ -23,7 +46,7 @@ Can SHAP/LIME feature-importance explanations of crypto next-day direction model
 * **(c) Perturbation stability:** do they survive a tiny input nudge (1% or 5% of a std)?
 * **(d) Key question:** is the instability worse in high-volatility regimes than in calm ones?
 
-## Key results
+## Key results in detail
 
 All numbers come from `results/tables/`. Accuracy is pooled over 9835 out-of-sample days per
 model, and the explanation results over 550 explained days (310 calm, 240 volatile).
@@ -54,8 +77,9 @@ crypto-xai-audit/
 ├── run_all.py                  entry point: experiments -> analysis (--quick, --analysis-only)
 ├── requirements.txt            minimum package versions
 ├── pytest.ini
+├── LICENSE                     MIT (code); data keep Coin Metrics' terms
 ├── HANDOFF.md                  original design notes
-├── data/raw/                   Coin Metrics Community CSVs: btc, eth, ada, link, ltc
+├── data/raw/                   Coin Metrics Community CSVs: btc, eth, ada, link, ltc (see data/README.md)
 ├── src/xaiaudit/
 │   ├── config.py               every setting + QUICK overrides
 │   ├── data.py                 loader (refuses gaps/duplicates)
@@ -137,7 +161,7 @@ give identical CSVs (test TC-20). On Colab, open
 | Path | Contents |
 |---|---|
 | `results/cache/*.csv` | Tidy rows from every audit: `predictions`, `agreement_local`, `agreement_global`, `global_importance`, `noise_floor`, `retrain_stability`, `retrain_top1`, `retrain_accuracy`, `perturbation`, `folds` |
-| `results/cache/attributions.pkl` | Raw attribution arrays for every (coin, model, fold) |
+| `results/cache/attributions.pkl` | Raw attribution arrays for every (coin, model, fold). About 9 MB, so it is **not committed**; `python run_all.py` recreates it |
 | `results/tables/*.csv` and `*.md` | Summary tables: accuracy by regime/coin, agreement, noise floor, retraining, perturbation, excess over noise floor, global feature ranks, the 56 regime tests |
 | `results/tables/key_numbers.json` | Headline counts (tests run, significant tests, random baselines, sample sizes) |
 | `results/figures/fig1…fig7.png` | Accuracy, agreement heatmap, retraining, perturbation, volatile − calm forest plot, top-1 frequency, placebo nulls |
@@ -156,9 +180,10 @@ replaces the planned SOL because SOL's volume history is missing in this dataset
 
 ## License
 
-No license has been chosen for the code yet, so by default all rights are reserved by the
-author. Add a `LICENSE` file (for example MIT) before making the repository public. The files
-in `data/raw/` stay under Coin Metrics' terms whatever license the code gets.
+The **code and documentation** are released under the [MIT License](LICENSE).
+
+The **data** in `data/raw/` are Coin Metrics Community Data. They keep Coin Metrics' own license
+terms and are not covered by the MIT license. See [`data/README.md`](data/README.md).
 
 ## Timeline vs proposal
 
